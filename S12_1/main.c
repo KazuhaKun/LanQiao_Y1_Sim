@@ -36,12 +36,12 @@ unsigned int Time_1s;		//同上,主要负责频率的处理
 unsigned int Freq;			//频率值
 unsigned int Sys_Tick;		//
 unsigned char Seg_Disp_Mode;	//0 温度显示 1 参数设置 2 DAC
-unsigned char DAC_Mode;
+unsigned char DAC_Mode=0;
 float T;
 unsigned int temp_disp;
 unsigned char temp_set=25;
-unsigned char temp_DAC_set;
-unsigned char DAC_Set;
+unsigned char temp_DAC_set=25;
+float DAC_Set;
 unsigned int DAC_Disp;
 
 void Key_Proc(){
@@ -59,12 +59,15 @@ void Key_Proc(){
 			break;
 		case 8:
 			if(Seg_Disp_Mode==1) {
-				temp_set--;
+				// temp_set--;
+				if(--temp_set==255) temp_set=0;
+
 			}
 			break;
 		case 9:
 			if(Seg_Disp_Mode==1) {
-				if(++temp_set==100) temp_set=99;
+				// if(++temp_set==100) temp_set=99;
+				if(++temp_set==0) temp_set=255;
 			}
 			break;
 		case 5:
@@ -122,10 +125,10 @@ void DA_Proc(){
 	}
 	if(DAC_Mode==1) {
 		if(T<=20) DAC_Set=51;
-		else if(T<=40) DAC_Set=(0.15*T-2)*51;
+		else if(T<=40) DAC_Set=7.65*T-102;
 		else if(T>40) DAC_Set=204;
 	}
-	DAC_Disp = DAC_Set/51.0*100;
+	DAC_Disp = DAC_Set*100/51.0;
 	Da_Write(DAC_Set);
 }
 

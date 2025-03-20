@@ -1,0 +1,161 @@
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 20:52:48 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <STC15F2K60S2.H> //单片机头文件
+   2          #include "iic.h"  //IIC相关代码,直接调用EEPROM和AD/DA(Da_Write;Ad_Read;EEPROM_Read;EEPROM_Write)
+   3          #include "ds1302.h"   //直接操作rtc时钟(Read_Rtc;Set_Rtc)
+   4          #include "onewire.h"  //直接读出24C20温度(rd_temperature)
+   5          #include <string.h>   //memset需要
+   6          #include "init.h"
+   7          #include "key.h"
+   8          #include "led.h"
+   9          #include "seg.h"
+  10          #include "uart.h"
+  11          #include "ultrawave.h"
+  12          
+  13          void Delay(unsigned int t){
+  14   1        while(t--){
+  15   2        }
+  16   1      }
+  17          
+  18          //HC138的选择
+  19          void SetHC138(unsigned char channel,unsigned char dat){
+  20   1        P2 = (P2 & 0x1f) | (channel << 5);
+  21   1        P0 = dat;
+  22   1      }
+  23          
+  24          //超多变量
+  25          unsigned char Key_Val, Key_Down, Key_Old, Key_Up; //按键相关变量
+  26          unsigned char Seg_Buf[8]={17,17,17,17,17,17,17,17};   //数码管对应位置显示值存储数组
+  27          unsigned char Seg_Point[8]={0,0,0,0,0,0,0,0};   //数码管对应位置小数点存储数组
+  28          unsigned char Seg_Pos;    //数码管刷新位置值
+  29          unsigned char ucLed[8]={0,0,0,0,0,0,0,0};   //LED对应位置状态存储数组
+  30          unsigned char Uart_Recv[10];  //串口接收存储数组
+  31          unsigned char Uart_Recv_Index;  //串口数据索引
+  32          unsigned char ucRtc[3] = {11,12,13};  //Rtc时钟数值
+  33          unsigned int Slow_Down;   //用于计时中断服务函数
+  34          bit Seg_Flag, Key_Flag;   //同上
+  35          bit Uart_Flag;        //同上
+  36          unsigned int Time_1s;   //同上,主要负责频率的处理
+  37          unsigned int Freq;      //频率值
+  38          unsigned int Sys_Tick;    //
+  39          
+  40          void Key_Proc(){
+  41   1        if(Key_Flag)return;
+  42   1        Key_Flag = 1;
+  43   1        Key_Val = Key_Read();
+  44   1        Key_Down = Key_Val & (Key_Old ^ Key_Val);
+  45   1        Key_Up = ~Key_Val & (Key_Old ^ Key_Val);
+  46   1        Key_Old = Key_Val;
+  47   1      
+  48   1      
+  49   1      }
+  50          
+  51          void Led_Proc(){}
+  52          
+  53          void Seg_Proc(){
+  54   1        if(Seg_Flag) return;
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 20:52:48 PAGE 2   
+
+  55   1        Seg_Flag = 1;
+  56   1        //
+  57   1      }
+  58          
+  59          void Uart_Proc(){
+  60   1        if(Uart_Recv_Index == 0)return;
+  61   1        if(Sys_Tick >= 10){
+  62   2          Sys_Tick = Uart_Flag = 0;
+  63   2          //逻辑处理
+  64   2      
+  65   2          memset(Uart_Recv, 0, Uart_Recv_Index);
+  66   2          Uart_Recv_Index = 0;
+  67   2        }
+  68   1      }
+  69          
+  70          void Timer0_Init(void){
+  71   1        AUXR &= 0x7f;
+  72   1        TMOD &= 0xf0;
+  73   1        TMOD |= 0x05;
+  74   1        TL0 = 0;
+  75   1        TH0 = 0;
+  76   1        TF0 = 0;
+  77   1        TR0 = 1;
+  78   1      }
+  79          void Timer1_Init(void){
+  80   1        AUXR &= 0xbf;
+  81   1        TMOD &= 0x0f;
+  82   1        TL1 = (65536-1000)%256;
+  83   1        TH1 = (65536-1000)/256;
+  84   1        TF1 = 0;
+  85   1        TR1 = 1;
+  86   1        ET1 = 1;
+  87   1        EA = 1;
+  88   1      }
+  89          
+  90          void Timer1_Isr(void) interrupt 3
+  91          {
+  92   1        if (++Slow_Down == 400){
+  93   2          Seg_Flag = Slow_Down =0;
+  94   2        }
+  95   1        if (Slow_Down % 10 == 0){
+  96   2          Key_Flag = 0;
+  97   2        }
+  98   1        if (Uart_Flag) Sys_Tick++;
+  99   1        if (++Time_1s == 1000){
+ 100   2          Time_1s = 0;
+ 101   2          Freq = TH0 << 8 | TL0;
+ 102   2          TH0 = 0;
+ 103   2          TL0 = 0;
+ 104   2        }
+ 105   1        Seg_Disp(Slow_Down % 8, Seg_Buf[Slow_Down % 8], Seg_Point[Slow_Down % 8]);
+ 106   1        Led_Disp(Slow_Down % 8, ucLed[Slow_Down % 8]);
+ 107   1      }
+ 108          
+ 109          void Uart1Server() interrupt 4
+ 110          {
+ 111   1        if(RI == 1){
+ 112   2          Uart_Flag = 1;
+ 113   2          Sys_Tick = 0;
+ 114   2          Uart_Recv[Uart_Recv_Index] = SBUF;
+ 115   2          Uart_Recv_Index++;
+ 116   2          RI = 0;
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 20:52:48 PAGE 3   
+
+ 117   2        }
+ 118   1        if(Uart_Recv_Index > 10) Uart_Recv_Index =0;
+ 119   1      }
+ 120          
+ 121          
+ 122          void main(){
+ 123   1        InitSys();
+ 124   1        Timer1_Init();
+ 125   1        Set_Rtc(ucRtc);
+ 126   1        UartInit();
+ 127   1        while(1){
+ 128   2          Key_Proc();
+ 129   2          Seg_Proc();
+ 130   2          Led_Proc();
+ 131   2          Uart_Proc();
+ 132   2        }
+ 133   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    408    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     51    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

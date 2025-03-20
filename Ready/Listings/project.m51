@@ -1,0 +1,459 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        03/18/2025  20:12:13  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\main.obj, .\Objects\ds1302.obj, .\Objects\iic.obj, .\Objects\onewire.obj TO .\Obje
+>> cts\project PRINT (.\Listings\project.m51) RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\main.obj (MAIN)
+  .\Objects\ds1302.obj (DS1302)
+  .\Objects\iic.obj (IIC)
+  .\Objects\onewire.obj (ONEWIRE)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  .\Objects\project (MAIN)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+                    0008H     0018H                  *** GAP ***
+            BIT     0020H.0   0000H.1   UNIT         ?BI?INIT_DS18B20?ONEWIRE
+                    0020H.1   0000H.7                *** GAP ***
+            IDATA   0021H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0034H     UNIT         ?PR?_READ_DS1302_BYTE?DS1302
+            CODE    0037H     002CH     UNIT         ?PR?_I2CSENDBYTE?IIC
+            CODE    0063H     0027H     UNIT         ?PR?INIT_DS18B20?ONEWIRE
+            CODE    008AH     001EH     UNIT         ?PR?_WRITE_DS18B20?ONEWIRE
+            CODE    00A8H     001DH     UNIT         ?PR?I2CRECEIVEBYTE?IIC
+            CODE    00C5H     001AH     UNIT         ?PR?_I2C_DELAY?IIC
+            CODE    00DFH     001AH     UNIT         ?PR?_DELAY_ONEWIRE?ONEWIRE
+            CODE    00F9H     001AH     UNIT         ?PR?READ_DS18B20?ONEWIRE
+            CODE    0113H     0018H     UNIT         ?PR?_I2CSENDACK?IIC
+            CODE    012BH     0014H     UNIT         ?PR?_WRITE_DS1302_BYTE?DS1302
+            CODE    013FH     0013H     UNIT         ?PR?_WRITE_DS1302?DS1302
+            CODE    0152H     0012H     UNIT         ?PR?I2CWAITACK?IIC
+            CODE    0164H     000FH     UNIT         ?PR?I2CSTART?IIC
+            CODE    0173H     000CH     UNIT         ?PR?I2CSTOP?IIC
+            CODE    017FH     000CH     UNIT         ?C_C51STARTUP
+            CODE    018BH     0002H     UNIT         ?PR?MAIN?MAIN
+
+
+
+OVERLAY MAP OF MODULE:   .\Objects\project (MAIN)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?MAIN
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 2
+
+
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\project (MAIN)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        MAIN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        CCON
+  C:018BH         PUBLIC        main
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          MAIN
+  C:018BH         LINE#         3
+  C:018BH         LINE#         4
+  C:018BH         LINE#         6
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MAIN
+
+  -------         MODULE        DS1302
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        CCON
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:0003H         PUBLIC        _Read_Ds1302_Byte
+  B:00A0H.3       PUBLIC        SDA
+  B:0090H.7       PUBLIC        SCK
+  C:012BH         PUBLIC        _Write_Ds1302_Byte
+  C:013FH         PUBLIC        _Write_Ds1302
+  B:0090H.3       PUBLIC        RST
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          _WRITE_DS1302
+  D:0007H         SYMBOL        temp
+  -------         DO            
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 3
+
+
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:013FH         LINE#         9
+  C:013FH         LINE#         10
+  C:013FH         LINE#         12
+  C:0141H         LINE#         13
+  C:0141H         LINE#         14
+  C:0143H         LINE#         15
+  C:0147H         LINE#         16
+  C:014BH         LINE#         17
+  C:014DH         LINE#         18
+  C:0151H         LINE#         19
+  -------         ENDPROC       _WRITE_DS1302
+  -------         PROC          _WRITE_DS1302_BYTE
+  D:0007H         SYMBOL        address
+  D:0005H         SYMBOL        dat
+  C:012BH         LINE#         22
+  C:012BH         LINE#         23
+  C:012BH         LINE#         24
+  C:012EH         LINE#         25
+  C:0131H         LINE#         26
+  C:0134H         LINE#         27
+  C:0137H         LINE#         28
+  C:013CH         LINE#         29
+  C:013EH         LINE#         30
+  -------         ENDPROC       _WRITE_DS1302_BYTE
+  -------         PROC          _READ_DS1302_BYTE
+  D:0007H         SYMBOL        address
+  -------         DO            
+  D:0007H         SYMBOL        i
+  D:0005H         SYMBOL        temp
+  -------         ENDDO         
+  C:0003H         LINE#         33
+  C:0003H         LINE#         34
+  C:0003H         LINE#         35
+  C:0005H         LINE#         36
+  C:0008H         LINE#         37
+  C:000BH         LINE#         38
+  C:000EH         LINE#         39
+  C:0011H         LINE#         40
+  C:0013H         LINE#         41
+  C:0013H         LINE#         42
+  C:0015H         LINE#         43
+  C:0019H         LINE#         44
+  C:001CH         LINE#         45
+  C:001FH         LINE#         46
+  C:0021H         LINE#         47
+  C:0025H         LINE#         48
+  C:0028H         LINE#         49
+  C:002BH         LINE#         50
+  C:002EH         LINE#         51
+  C:0031H         LINE#         52
+  C:0034H         LINE#         53
+  C:0036H         LINE#         54
+  -------         ENDPROC       _READ_DS1302_BYTE
+  -------         ENDMOD        DS1302
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 4
+
+
+  -------         MODULE        IIC
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  C:00C9H         SYMBOL        _I2C_Delay
+  D:00B8H         PUBLIC        IP
+  C:00A8H         PUBLIC        I2CReceiveByte
+  D:00D8H         PUBLIC        CCON
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  B:00A0H.1       PUBLIC        sda
+  B:00A0H.0       PUBLIC        scl
+  C:0164H         PUBLIC        I2CStart
+  C:0113H         PUBLIC        _I2CSendAck
+  C:0037H         PUBLIC        _I2CSendByte
+  C:0152H         PUBLIC        I2CWaitAck
+  C:0173H         PUBLIC        I2CStop
+  D:00D0H         PUBLIC        PSW
+  C:00C5H         SYMBOL        L?0021
+  -------         PROC          L?0020
+  -------         ENDPROC       L?0020
+  C:00C5H         SYMBOL        L?0021
+  -------         PROC          _I2C_DELAY
+  D:0007H         SYMBOL        n
+  C:00C9H         LINE#         10
+  C:00C9H         LINE#         11
+  C:00C9H         LINE#         13
+  C:00C9H         LINE#         14
+  C:00CEH         LINE#         15
+  C:00D3H         LINE#         16
+  C:00D8H         LINE#         17
+  C:00D8H         LINE#         18
+  C:00DEH         LINE#         19
+  -------         ENDPROC       _I2C_DELAY
+  -------         PROC          I2CSTART
+  C:0164H         LINE#         22
+  C:0164H         LINE#         23
+  C:0164H         LINE#         24
+  C:0166H         LINE#         25
+  C:0166H         LINE#         26
+  C:0169H         LINE#         27
+  C:016BH         LINE#         28
+  C:0170H         LINE#         29
+  C:0172H         LINE#         30
+  -------         ENDPROC       I2CSTART
+  -------         PROC          I2CSTOP
+  C:0173H         LINE#         33
+  C:0173H         LINE#         34
+  C:0173H         LINE#         35
+  C:0175H         LINE#         36
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 5
+
+
+  C:0175H         LINE#         37
+  C:0178H         LINE#         38
+  C:017AH         LINE#         39
+  -------         ENDPROC       I2CSTOP
+  -------         PROC          _I2CSENDBYTE
+  D:0005H         SYMBOL        byt
+  -------         DO            
+  D:0004H         SYMBOL        i
+  -------         ENDDO         
+  C:0037H         LINE#         43
+  C:0039H         LINE#         44
+  C:0039H         LINE#         47
+  C:003BH         LINE#         48
+  C:003DH         LINE#         49
+  C:0042H         LINE#         50
+  C:0046H         LINE#         51
+  C:0048H         LINE#         52
+  C:004AH         LINE#         53
+  C:004AH         LINE#         54
+  C:004CH         LINE#         55
+  C:004CH         LINE#         56
+  C:0051H         LINE#         57
+  C:0053H         LINE#         58
+  C:0057H         LINE#         59
+  C:005CH         LINE#         60
+  C:0060H         LINE#         62
+  C:0062H         LINE#         63
+  -------         ENDPROC       _I2CSENDBYTE
+  -------         PROC          I2CRECEIVEBYTE
+  -------         DO            
+  D:0005H         SYMBOL        da
+  D:0004H         SYMBOL        i
+  -------         ENDDO         
+  C:00A8H         LINE#         66
+  C:00A8H         LINE#         67
+  C:00A8H         LINE#         70
+  C:00AAH         LINE#         71
+  C:00AAH         LINE#         72
+  C:00ADH         LINE#         73
+  C:00B1H         LINE#         74
+  C:00B4H         LINE#         75
+  C:00B7H         LINE#         76
+  C:00B9H         LINE#         77
+  C:00BEH         LINE#         78
+  C:00C2H         LINE#         79
+  C:00C4H         LINE#         80
+  -------         ENDPROC       I2CRECEIVEBYTE
+  -------         PROC          I2CWAITACK
+  -------         DO            
+  D:0005H         SYMBOL        ackbit
+  -------         ENDDO         
+  C:0152H         LINE#         83
+  C:0152H         LINE#         84
+  C:0152H         LINE#         87
+  C:0152H         LINE#         88
+  C:0155H         LINE#         89
+  C:015AH         LINE#         90
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 6
+
+
+  C:015CH         LINE#         91
+  C:0161H         LINE#         93
+  C:0163H         LINE#         94
+  -------         ENDPROC       I2CWAITACK
+  -------         PROC          _I2CSENDACK
+  D:0007H         SYMBOL        ackbit
+  C:0113H         LINE#         97
+  C:0113H         LINE#         98
+  C:0113H         LINE#         99
+  C:0115H         LINE#         100
+  C:011AH         LINE#         101
+  C:011FH         LINE#         102
+  C:011FH         LINE#         103
+  C:0122H         LINE#         104
+  C:0124H         LINE#         105
+  C:0126H         LINE#         106
+  -------         ENDPROC       _I2CSENDACK
+  -------         ENDMOD        IIC
+
+  -------         MODULE        ONEWIRE
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  C:00F9H         PUBLIC        Read_DS18B20
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  C:00E3H         PUBLIC        _Delay_OneWire
+  C:008AH         PUBLIC        _Write_DS18B20
+  B:0090H.4       PUBLIC        DQ
+  D:00B8H         PUBLIC        IP
+  C:0063H         PUBLIC        init_ds18b20
+  D:00D8H         PUBLIC        CCON
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:00D0H         PUBLIC        PSW
+  C:00DFH         SYMBOL        L?0019
+  -------         PROC          L?0018
+  -------         ENDPROC       L?0018
+  C:00DFH         SYMBOL        L?0019
+  -------         PROC          _DELAY_ONEWIRE
+  D:0006H         SYMBOL        t
+  -------         DO            
+  D:0005H         SYMBOL        i
+  -------         ENDDO         
+  C:00E3H         LINE#         8
+  C:00E3H         LINE#         9
+  C:00E3H         LINE#         11
+  C:00EDH         LINE#         12
+  C:00F8H         LINE#         13
+  C:00F8H         LINE#         14
+  -------         ENDPROC       _DELAY_ONEWIRE
+  -------         PROC          _WRITE_DS18B20
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 7
+
+
+  D:0001H         SYMBOL        dat
+  -------         DO            
+  D:0003H         SYMBOL        i
+  -------         ENDDO         
+  C:008AH         LINE#         17
+  C:008CH         LINE#         18
+  C:008CH         LINE#         20
+  C:008EH         LINE#         21
+  C:008EH         LINE#         22
+  C:0090H         LINE#         23
+  C:0094H         LINE#         24
+  C:0097H         LINE#         25
+  C:0099H         LINE#         26
+  C:009DH         LINE#         27
+  C:00A1H         LINE#         28
+  -------         ENDPROC       _WRITE_DS18B20
+  -------         PROC          READ_DS18B20
+  -------         DO            
+  D:0003H         SYMBOL        i
+  D:0004H         SYMBOL        dat
+  -------         ENDDO         
+  C:00F9H         LINE#         32
+  C:00F9H         LINE#         33
+  C:00F9H         LINE#         37
+  C:00FBH         LINE#         38
+  C:00FBH         LINE#         39
+  C:00FDH         LINE#         40
+  C:0101H         LINE#         41
+  C:0103H         LINE#         42
+  C:0106H         LINE#         43
+  C:0106H         LINE#         44
+  C:0109H         LINE#         45
+  C:0109H         LINE#         46
+  C:010CH         LINE#         47
+  C:0110H         LINE#         48
+  C:0112H         LINE#         49
+  -------         ENDPROC       READ_DS18B20
+  -------         PROC          INIT_DS18B20
+  -------         DO            
+  B:0020H.0       SYMBOL        initflag
+  -------         ENDDO         
+  C:0063H         LINE#         52
+  C:0063H         LINE#         53
+  C:0063H         LINE#         54
+  C:0065H         LINE#         56
+  C:0067H         LINE#         57
+  C:006EH         LINE#         58
+  C:0070H         LINE#         59
+  C:0077H         LINE#         60
+  C:0079H         LINE#         61
+  C:0080H         LINE#         62
+  C:0084H         LINE#         63
+  C:0087H         LINE#         65
+  C:0089H         LINE#         66
+  -------         ENDPROC       INIT_DS18B20
+  -------         ENDMOD        ONEWIRE
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      03/18/2025  20:12:13  PAGE 8
+
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_WRITE_DS1302_BYTE?DS1302
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_READ_DS1302_BYTE?DS1302
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?I2CSTART?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?I2CSTOP?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_I2CSENDBYTE?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?I2CRECEIVEBYTE?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?I2CWAITACK?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_I2CSENDACK?IIC
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_WRITE_DS18B20?ONEWIRE
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?READ_DS18B20?ONEWIRE
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?INIT_DS18B20?ONEWIRE
+
+Program Size: data=9.1 xdata=0 code=397
+LINK/LOCATE RUN COMPLETE.  11 WARNING(S),  0 ERROR(S)

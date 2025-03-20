@@ -1,0 +1,206 @@
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 23:29:06 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <STC15F2K60S2.H> //单片机头文件
+   2          #include "iic.h"  //IIC相关代码,直接调用EEPROM和AD/DA(Da_Write;Ad_Read;EEPROM_Read;EEPROM_Write)
+   3          #include "ds1302.h"   //直接操作rtc时钟(Read_Rtc;Set_Rtc)
+   4          #include "onewire.h"  //直接读出24C20温度(rd_temperature)
+   5          #include <string.h>   //memset需要
+   6          #include "init.h"
+   7          #include "key.h"
+   8          #include "led.h"
+   9          #include "seg.h"
+  10          #include "ultrawave.h"
+  11          
+  12          void Delay(unsigned int t){
+  13   1        while(t--){
+  14   2        }
+  15   1      }
+  16          
+  17          //HC138的选择
+  18          void SetHC138(unsigned char channel,unsigned char dat){
+  19   1        P2 = (P2 & 0x1f) | (channel << 5);
+  20   1        P0 = dat;
+  21   1      }
+  22          
+  23          //超多变量
+  24          unsigned char Key_Val, Key_Down, Key_Old, Key_Up; //按键相关变量
+  25          unsigned char Seg_Buf[8]={17,17,17,17,17,17,17,17};   //数码管对应位置显示值存储数组
+  26          unsigned char Seg_Point[8]={0,0,0,0,0,0,0,0};   //数码管对应位置小数点存储数组
+  27          unsigned char Seg_Pos;    //数码管刷新位置值
+  28          unsigned char ucLed[8]={0,0,0,0,0,0,0,0};   //LED对应位置状态存储数组
+  29          unsigned char Uart_Recv[10];  //串口接收存储数组
+  30          unsigned char Uart_Recv_Index;  //串口数据索引
+  31          unsigned char ucRtc[3] = {11,12,13};  //Rtc时钟数值
+  32          unsigned int Slow_Down;   //用于计时中断服务函数
+  33          bit Seg_Flag, Key_Flag;   //同上
+  34          bit Uart_Flag;        //同上
+  35          unsigned int Time_1s;   //同上,主要负责频率的处理
+  36          unsigned int Freq;      //频率值
+  37          unsigned int Sys_Tick;    //
+  38          unsigned char Seg_Disp_Mode;  //0 温度显示 1 参数设置 2 DAC
+  39          unsigned char DAC_Mode;
+  40          float T;
+  41          unsigned int temp_disp;
+  42          unsigned char temp_set=25;
+  43          unsigned char temp_DAC_set;
+  44          unsigned char DAC_Set;
+  45          unsigned int DAC_Disp;
+  46          
+  47          void Key_Proc(){
+  48   1        if(Key_Flag)return;
+  49   1        Key_Flag = 1;
+  50   1        Key_Val = Key_Read();
+  51   1        Key_Down = Key_Val & (Key_Old ^ Key_Val);
+  52   1        Key_Up = ~Key_Val & (Key_Old ^ Key_Val);
+  53   1        Key_Old = Key_Val;
+  54   1      
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 23:29:06 PAGE 2   
+
+  55   1        switch(Key_Down){
+  56   2          case 4:
+  57   2            if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+  58   2            if(Seg_Disp_Mode==2) temp_DAC_set=temp_set;
+  59   2            break;
+  60   2          case 8:
+  61   2            if(Seg_Disp_Mode==1) {
+  62   3              temp_set--;
+  63   3            }
+  64   2            break;
+  65   2          case 9:
+  66   2            if(Seg_Disp_Mode==1) {
+  67   3              if(++temp_set==100) temp_set=99;
+  68   3            }
+  69   2            break;
+  70   2          case 5:
+  71   2            if(++DAC_Mode==2) DAC_Mode=0;
+  72   2            break;
+  73   2          
+  74   2        }
+  75   1      }
+  76          
+  77          void Led_Proc(){
+  78   1        ucLed[0]=(DAC_Mode==0); 
+  79   1        ucLed[1]=(Seg_Disp_Mode==0);
+  80   1        ucLed[2]=(Seg_Disp_Mode==1);
+  81   1        ucLed[3]=(Seg_Disp_Mode==2);
+  82   1      }
+  83          
+  84          void Seg_Proc(){
+  85   1        if(Seg_Flag) return;
+  86   1        Seg_Flag = 1;
+  87   1      
+  88   1        T=rd_temperature();
+  89   1        // T=15.0;
+  90   1        temp_disp = T * 100;
+  91   1        //
+  92   1        if(Seg_Disp_Mode==0){
+  93   2          Seg_Buf[0]=12;
+  94   2          Seg_Buf[4]=temp_disp/1000%10;
+  95   2          Seg_Buf[5]=temp_disp/100%10;
+  96   2          Seg_Point[5]=1;
+  97   2          Seg_Buf[6]=temp_disp/10%10;
+  98   2          Seg_Buf[7]=temp_disp%10;
+  99   2        }
+ 100   1        if(Seg_Disp_Mode==1){
+ 101   2          Seg_Buf[0]=18;
+ 102   2          Seg_Buf[4]=17;
+ 103   2          Seg_Buf[5]=17;
+ 104   2          Seg_Point[5]=0;
+ 105   2          Seg_Buf[6]=temp_set/10%10;
+ 106   2          Seg_Buf[7]=temp_set%10;
+ 107   2        }
+ 108   1        if(Seg_Disp_Mode==2){
+ 109   2          Seg_Buf[0]=10;
+ 110   2          Seg_Buf[4]=17;
+ 111   2          Seg_Buf[5]=DAC_Disp/100%10;
+ 112   2          Seg_Point[5]=1;
+ 113   2          Seg_Buf[6]=DAC_Disp/10%10;
+ 114   2          Seg_Buf[7]=DAC_Disp%10;
+ 115   2        }
+ 116   1      }
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 23:29:06 PAGE 3   
+
+ 117          
+ 118          void DA_Proc(){
+ 119   1        if(DAC_Mode==0) {
+ 120   2          if(T<temp_DAC_set) DAC_Set=0;
+ 121   2          else DAC_Set=255;
+ 122   2        }
+ 123   1        if(DAC_Mode==1) {
+ 124   2          if(T<=20) DAC_Set=51;
+ 125   2          else if(T<=40) DAC_Set=(0.15*T-2)*51;
+ 126   2          else if(T>40) DAC_Set=204;
+ 127   2        }
+ 128   1        DAC_Disp = DAC_Set/51.0*100;
+ 129   1        Da_Write(DAC_Set);
+ 130   1      }
+ 131          
+ 132          // void Timer0_Init(void){
+ 133          //  AUXR &= 0x7f;
+ 134          //  TMOD &= 0xf0;
+ 135          //  TMOD |= 0x05;
+ 136          //  TL0 = 0;
+ 137          //  TH0 = 0;
+ 138          //  TF0 = 0;
+ 139          //  TR0 = 1;
+ 140          // }
+ 141          void Timer1_Init(void){
+ 142   1        AUXR &= 0xbf;
+ 143   1        TMOD &= 0x0f;
+ 144   1        TL1 = (65536-1000)%256;
+ 145   1        TH1 = (65536-1000)/256;
+ 146   1        TF1 = 0;
+ 147   1        TR1 = 1;
+ 148   1        ET1 = 1;
+ 149   1        EA = 1;
+ 150   1      }
+ 151          
+ 152          void Timer1_Isr(void) interrupt 3
+ 153          {
+ 154   1        if (++Slow_Down == 400){
+ 155   2          Seg_Flag = Slow_Down =0;
+ 156   2        }
+ 157   1        if (Slow_Down % 10 == 0){
+ 158   2          Key_Flag = 0;
+ 159   2        }
+ 160   1        Seg_Disp(Slow_Down % 8, Seg_Buf[Slow_Down % 8], Seg_Point[Slow_Down % 8]);
+ 161   1        Led_Disp(Slow_Down % 8, ucLed[Slow_Down % 8]);
+ 162   1        // if (Slow_Down % 100 == 0) Da_Write(DAC_Set);
+ 163   1      }
+ 164          
+ 165          void main(){
+ 166   1        InitSys();
+ 167   1        Timer1_Init();
+ 168   1        Set_Rtc(ucRtc);
+ 169   1        // Init_18B20();
+ 170   1        while(1){
+ 171   2          Key_Proc();
+ 172   2          Seg_Proc();
+ 173   2          Led_Proc();
+ 174   2          DA_Proc();
+ 175   2        }
+ 176   1      }
+
+
+C51 COMPILER V9.54   MAIN                                                                  03/19/2025 23:29:06 PAGE 4   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    787    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     64    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -26,6 +26,7 @@ unsigned char Key_Slow_Down;//按键减速专用变量
 unsigned char Seg_Buf[8] = {10,10,10,10,10,10,10,10};//数码管显示数据存放数组
 unsigned char Seg_Pos;//数码管扫描专用变量
 idata unsigned int Seg_Slow_Down;//数码管减速专用变量
+idata unsigned char L3_Count=0;
 idata unsigned char ucLed[8] = {0,0,0,0,0,0,0,0};//Led显示数据存放数组
 idata unsigned char Uart_Slow_Down;//串口减速专用变量
 idata unsigned char Uart_Recv[10];//串口接收数据储存数组 默认10个字节 若接收数据较长 可更改最大字节数
@@ -40,12 +41,23 @@ idata unsigned char Uart_Rx_Flag;
 unsigned int X,Y;
 unsigned int X_Set,Y_Set;
 /* 模式标志 */
-unsigned char Seg_Mode=0;
+unsigned char Seg_Mode=0;	//0坐标 1速度 2参数
 unsigned char Run_Status=0;  //0空闲 1运行 2等待
 /* 速度 */
 unsigned int Speed,Speed_Disp;
 /* 距离 */
 unsigned int Juli;
+bit Wait_Flag;
+/* 参数 */
+unsigned char R=10;
+char B=0;
+bit p_mode=0;	// 0R 1B
+/* LED闪烁标志位 */
+bit Flash_Flag=0;
+/* 日夜场景标志位 */
+bit Night_Flag=0;
+/* 到达标志位 */
+bit Arv_Flag=0;
 
 /* 键盘处理函数 */
 void Key_Proc()
@@ -58,6 +70,35 @@ void Key_Proc()
 	Key_Up = ~Key_Val & (Key_Old ^ Key_Val);//捕捉按键上降沿
 	Key_Old = Key_Val;//辅助扫描变量
 
+	switch(Key_Down){
+		case 4:
+			if(Run_Status == 0 && (X_Set !=0 | Y_Set != 0)) Run_Status = 1;
+			if(Run_Status == 2 && Wait_Flag = 0) Run_Status = 1;
+			if(Run_Status == 1) Run_Status = 2;
+			break;
+		case 5:
+			if(Run_Status == 0) {X=0;Y=0;}
+			break;
+		case 8:
+			if(++Seg_Mode == 3) Seg_Mode=0;
+			break;
+		case 9:
+			if(Seg_Mode == 2) p_mode = !p_mode;
+			break;
+		case 12:
+			if(Seg_Mode == 2){
+				if(p_mode==0) if(++R==21) R=10;
+				if(p_mode==1) if((B+5)>90) B=-90;
+			} 
+			break;
+		case 13:
+			if(Seg_Mode == 2){
+				if(p_mode==0) if(--R==9) R=20;
+				if(p_mode==1) if((B-5)<-90) B=90;
+			} 
+			break;
+
+	}
 }
 
 /* 信息处理函数 */
@@ -66,6 +107,14 @@ void Seg_Proc()
 	if(Seg_Slow_Down<500) return;
 	Seg_Slow_Down = 0;//数码管减速程序
 	
+	if(Juli<30) Wait_Flag=1;
+	else Wait_Flag = 0;
+
+	if(X==X_Set && Y==Y_Set) Arv_Flag=1;
+	else Arv_Flag=0;
+
+	if(Arv_Flag=1) if(++L3_Count==6) Arv_Flag=0;
+
 	switch(Seg_Mode){
 		case 0:
 			switch(Run_Status){
@@ -77,10 +126,10 @@ void Seg_Proc()
 					else Seg_Buf[2] = 16;
 					Seg_Buf[3] = X%10;
 					Seg_Buf[4] = 17;
-					if(Y/100%10 != 0) Seg_Buf[1] = Y/100%10;
-					else Seg_Buf[1] = 16;
-					if(Y/10%10 != 0) Seg_Buf[2] = Y/10%10;
-					else Seg_Buf[1] = 16;
+					if(Y/100%10 != 0) Seg_Buf[5] = Y/100%10;
+					else Seg_Buf[5] = 16;
+					if(Y/10%10 != 0) Seg_Buf[6] = Y/10%10;
+					else Seg_Buf[6] = 16;
 					Seg_Buf[7] = Y%10;
 					break;
 				case 1:
@@ -92,10 +141,10 @@ void Seg_Proc()
 					else Seg_Buf[2] = 16;
 					Seg_Buf[3] = X_Set%10;
 					Seg_Buf[4] = 17;
-					if(Y_Set/100%10 != 0) Seg_Buf[1] = Y_Set/100%10;
-					else Seg_Buf[1] = 16;
-					if(Y_Set/10%10 != 0) Seg_Buf[2] = Y_Set/10%10;
-					else Seg_Buf[1] = 16;
+					if(Y_Set/100%10 != 0) Seg_Buf[5] = Y_Set/100%10;
+					else Seg_Buf[5] = 16;
+					if(Y_Set/10%10 != 0) Seg_Buf[6] = Y_Set/10%10;
+					else Seg_Buf[6] = 16;
 					Seg_Buf[7] = Y_Set%10;
 					break;
 			}
@@ -142,8 +191,18 @@ void Seg_Proc()
 					break;
 			}
 		case 2:
-			switch()
-		
+			Seg_Buf[0] = 19;
+			Seg_Buf[1] = 16;
+			Seg_Buf[2] = R/10%10 + ',';
+			Seg_Buf[3] = R%10;
+			Seg_Buf[4] = 16;
+			if(B<0 && B/10!=0) Seg_Buf[5] = 17;
+			else Seg_Buf[5] = 16;
+			if(B<0 && B/10==0) Seg_Buf[6] = 17;
+			else if(B/10==0) Seg_Buf[6] = 16;
+			else Seg_Buf[6] = B/10%10;
+			Seg_Buf[7] = B%10;
+			break;
 	}
 
 }
@@ -151,7 +210,17 @@ void Seg_Proc()
 /* 其他显示函数 */
 void Led_Proc()
 {
-	
+	if(Run_Status==2) ucLed[0]=Flash_Flag;
+	else ucLed[0]=Run_Status;
+
+	if(Run_Status==1){
+		if(Night_Flag) ucLed[1]=0;
+		else ucLed[1]=1;
+	}
+	else ucLed[1]=0;
+
+	ucLed[2]=Arv_Flag;
+
 }
 
 /* 串口处理函数 */
@@ -190,7 +259,8 @@ void Timer0Server() interrupt 1
 	Key_Slow_Down ++;
 	Seg_Slow_Down ++;
 	Uart_Slow_Down++;
-	
+	if(Arv_Flag==1 && ++)
+	if(Seg_Slow_Down % 100 == 0) Flash_Flag=!Flash_Flag;
 	if(++Seg_Pos == 8) Seg_Pos = 0;//数码管显示专用
 	 // 数码管显示处理
   if (Seg_Buf[Seg_Pos] > 20)

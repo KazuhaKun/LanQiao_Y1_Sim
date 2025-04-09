@@ -20,6 +20,7 @@
 #include <iic.h>
 #include <ds1302.h>
 #include <onewire.h>
+#include <ultrawave.h>
 /* 变量声明区 */
 unsigned char Key_Val,Key_Down,Key_Old,Key_Up;//按键专用变量
 unsigned char Key_Slow_Down;//按键减速专用变量
@@ -40,6 +41,7 @@ idata unsigned char Uart_Rx_Flag;
 /* 坐标变量 */
 unsigned int X,Y;
 unsigned int X_Set,Y_Set;
+unsigned int XY_Uart;
 /* 模式标志 */
 unsigned char Seg_Mode=0;	//0坐标 1速度 2参数
 unsigned char Run_Status=0;  //0空闲 1运行 2等待
@@ -49,8 +51,8 @@ unsigned int Speed,Speed_Disp;
 unsigned int Juli;
 bit Wait_Flag;
 /* 参数 */
-unsigned char R=10;
-char B=0;
+unsigned char _R=10;
+char _B=0;
 bit p_mode=0;	// 0R 1B
 /* LED闪烁标志位 */
 bit Flash_Flag=0;
@@ -73,7 +75,7 @@ void Key_Proc()
 	switch(Key_Down){
 		case 4:
 			if(Run_Status == 0 && (X_Set !=0 | Y_Set != 0)) Run_Status = 1;
-			if(Run_Status == 2 && Wait_Flag = 0) Run_Status = 1;
+			if(Run_Status == 2 && Wait_Flag == 0) Run_Status = 1;
 			if(Run_Status == 1) Run_Status = 2;
 			break;
 		case 5:
@@ -87,14 +89,14 @@ void Key_Proc()
 			break;
 		case 12:
 			if(Seg_Mode == 2){
-				if(p_mode==0) if(++R==21) R=10;
-				if(p_mode==1) if((B+5)>90) B=-90;
+				if(p_mode==0) if(++_R==21) _R=10;
+				if(p_mode==1) if((_B+5)>90) _B=-90;
 			} 
 			break;
 		case 13:
 			if(Seg_Mode == 2){
-				if(p_mode==0) if(--R==9) R=20;
-				if(p_mode==1) if((B-5)<-90) B=90;
+				if(p_mode==0) if(--_R==9) _R=20;
+				if(p_mode==1) if((_B-5)<-90) _B=90;
 			} 
 			break;
 
@@ -107,13 +109,23 @@ void Seg_Proc()
 	if(Seg_Slow_Down<500) return;
 	Seg_Slow_Down = 0;//数码管减速程序
 	
+
+	Juli = Ut_Wave_Data();
 	if(Juli<30) Wait_Flag=1;
 	else Wait_Flag = 0;
 
 	if(X==X_Set && Y==Y_Set) Arv_Flag=1;
 	else Arv_Flag=0;
 
-	if(Arv_Flag=1) if(++L3_Count==6) Arv_Flag=0;
+	if(Arv_Flag==1){
+		if(++L3_Count==6) Arv_Flag=0;
+	}
+
+	Speed = 3.14 * (R/10.0) * F / (100.0 + B);
+	Speed_Disp = 10 * Speed;
+	
+	// if(Ad_Read(0x94)>12) Night_Flag=0;
+	// else Night_Flag=1;
 
 	switch(Seg_Mode){
 		case 0:
@@ -193,15 +205,15 @@ void Seg_Proc()
 		case 2:
 			Seg_Buf[0] = 19;
 			Seg_Buf[1] = 16;
-			Seg_Buf[2] = R/10%10 + ',';
-			Seg_Buf[3] = R%10;
+			Seg_Buf[2] = _R/10%10 + ',';
+			Seg_Buf[3] = _R%10;
 			Seg_Buf[4] = 16;
-			if(B<0 && B/10!=0) Seg_Buf[5] = 17;
+			if(_B<0 && _B/10!=0) Seg_Buf[5] = 17;
 			else Seg_Buf[5] = 16;
-			if(B<0 && B/10==0) Seg_Buf[6] = 17;
-			else if(B/10==0) Seg_Buf[6] = 16;
-			else Seg_Buf[6] = B/10%10;
-			Seg_Buf[7] = B%10;
+			if(_B<0 && _B/10==0) Seg_Buf[6] = 17;
+			else if(_B/10==0) Seg_Buf[6] = 16;
+			else Seg_Buf[6] = _B/10%10;
+			Seg_Buf[7] = _B%10;
 			break;
 	}
 
@@ -238,6 +250,45 @@ void Uart_Proc()
     memset(Uart_Buf, 0, Uart_Rx_Index); // 清空接收数据
     Uart_Rx_Index = 0;
   }
+
+	switch(Uart_Buf[0]){
+		case '(':
+			if(Run_Status==0){
+				Uart_Send[0] = 'G';
+				Uart_Send[1] = 'o';
+				Uart_Send[2] = 't';
+				Uart_Send[3] = ' ';
+				Uart_Send[4] = 'i';
+				Uart_Send[5] = 't';
+			}
+			else {
+				Uart_Send[0] = 'B';
+				Uart_Send[1] = 'u';
+				Uart_Send[2] = 's';
+				Uart_Send[3] = 'y';
+			}
+			break;
+		case '?':
+			if(Run_Status==0){
+				Uart_Send[0] = 'I';
+				Uart_Send[1] = 'd';
+				Uart_Send[2] = 'l';
+				Uart_Send[3] = 'e';
+			}
+			else if(Run_Status==1){
+				Uart_Send[0] = 'B';
+				Uart_Send[1] = 'u';
+				Uart_Send[2] = 's';
+				Uart_Send[3] = 'y';
+			}
+			else if(Run_Status==2){
+				Uart_Send[0] = 'W';
+				Uart_Send[1] = 'a';
+				Uart_Send[2] = 'i';
+				Uart_Send[3] = 't';
+			}
+			break;
+	}   
 }
 
 /* 定时器0中断初始化函数 */
@@ -259,7 +310,6 @@ void Timer0Server() interrupt 1
 	Key_Slow_Down ++;
 	Seg_Slow_Down ++;
 	Uart_Slow_Down++;
-	if(Arv_Flag==1 && ++)
 	if(Seg_Slow_Down % 100 == 0) Flash_Flag=!Flash_Flag;
 	if(++Seg_Pos == 8) Seg_Pos = 0;//数码管显示专用
 	 // 数码管显示处理

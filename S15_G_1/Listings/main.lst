@@ -1,0 +1,335 @@
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /***************************************************************************************
+   2          * Copyright (C) 2025 米醋电子工作室
+   3          *
+   4          * 版本         ：V4T
+   5          * 作者         ：米醋电子工作室
+   6          * 描述         ：该版本为V2版本的改进版，针对4T平台做了专项优化，修复了此前�
+             -��本的若干Bug
+   7          *
+   8          * 版权归米醋电子工作室所有，并保留所有权力。
+   9          * 未经明确书面许可，任何个人或机构不得擅自用于商业用途。
+  10          ***********************************************************************************************/
+  11          
+  12          /* 头文件声明区 */
+  13          #include <STC15F2K60S2.H>//单片机寄存器专用头文件
+  14          #include <Init.h>//初始化底层驱动专用头文件
+  15          #include <Led.h>//Led底层驱动专用头文件
+  16          #include <Key.h>//按键底层驱动专用头文件
+  17          #include <Seg.h>//数码管底层驱动专用头文件
+  18          #include <Uart.h>//串口底层驱动专用头文件
+  19          #include <string.h>
+  20          #include <iic.h>
+  21          #include <ds1302.h>
+  22          #include <onewire.h>
+  23          /* 变量声明区 */
+  24          unsigned char Key_Val,Key_Down,Key_Old,Key_Up;//按键专用变量
+  25          unsigned char Key_Slow_Down;//按键减速专用变量
+  26          unsigned char Seg_Buf[8] = {10,10,10,10,10,10,10,10};//数码管显示数据存放数组
+  27          unsigned char Seg_Pos;//数码管扫描专用变量
+  28          idata unsigned int Seg_Slow_Down;//数码管减速专用变量
+  29          idata unsigned char L3_Count=0;
+  30          idata unsigned char ucLed[8] = {0,0,0,0,0,0,0,0};//Led显示数据存放数组
+  31          idata unsigned char Uart_Slow_Down;//串口减速专用变量
+  32          idata unsigned char Uart_Recv[10];//串口接收数据储存数组 默认10个字节 若接收数据较长
+             - 可更改最大字节数
+  33          idata unsigned char Uart_Recv_Index;//串口接收数组指针
+  34          idata unsigned char Uart_Send[10];//串口接收数据储存数组 默认10个字节 若发送数据较长
+             - 可更改最大字节数
+  35          /* 串口数据 */
+  36          pdata unsigned char Uart_Buf[10] = {0}; // 串口接收缓冲区
+  37          idata unsigned char Uart_Rx_Index;      // 串口接收索引
+  38          idata unsigned char Uart_Recv_Tick;     // 串口接收时间标志
+  39          idata unsigned char Uart_Rx_Flag;
+  40          /* 坐标变量 */
+  41          unsigned int X,Y;
+  42          unsigned int X_Set,Y_Set;
+  43          /* 模式标志 */
+  44          unsigned char Seg_Mode=0; //0坐标 1速度 2参数
+  45          unsigned char Run_Status=0;  //0空闲 1运行 2等待
+  46          /* 速度 */
+  47          unsigned int Speed,Speed_Disp;
+  48          /* 距离 */
+  49          unsigned int Juli;
+  50          bit Wait_Flag;
+  51          /* 参数 */
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 2   
+
+  52          unsigned char _R=10;
+  53          char _B=0;
+  54          bit p_mode=0; // 0R 1B
+  55          /* LED闪烁标志位 */
+  56          bit Flash_Flag=0;
+  57          /* 日夜场景标志位 */
+  58          bit Night_Flag=0;
+  59          /* 到达标志位 */
+  60          bit Arv_Flag=0;
+  61          
+  62          /* 键盘处理函数 */
+  63          void Key_Proc()
+  64          {
+  65   1        if(Key_Slow_Down<10) return;
+  66   1        Key_Slow_Down = 0;//键盘减速程序
+  67   1      
+  68   1        Key_Val = Key_Read();//实时读取键码值
+  69   1        Key_Down = Key_Val & (Key_Old ^ Key_Val);//捕捉按键下降沿
+  70   1        Key_Up = ~Key_Val & (Key_Old ^ Key_Val);//捕捉按键上降沿
+  71   1        Key_Old = Key_Val;//辅助扫描变量
+  72   1      
+  73   1        switch(Key_Down){
+  74   2          case 4:
+  75   2            if(Run_Status == 0 && (X_Set !=0 | Y_Set != 0)) Run_Status = 1;
+  76   2            if(Run_Status == 2 && Wait_Flag == 0) Run_Status = 1;
+  77   2            if(Run_Status == 1) Run_Status = 2;
+  78   2            break;
+  79   2          case 5:
+  80   2            if(Run_Status == 0) {X=0;Y=0;}
+  81   2            break;
+  82   2          case 8:
+  83   2            if(++Seg_Mode == 3) Seg_Mode=0;
+  84   2            break;
+  85   2          case 9:
+  86   2            if(Seg_Mode == 2) p_mode = !p_mode;
+  87   2            break;
+  88   2          case 12:
+  89   2            if(Seg_Mode == 2){
+  90   3              if(p_mode==0) if(++_R==21) _R=10;
+  91   3              if(p_mode==1) if((_B+5)>90) _B=-90;
+  92   3            } 
+  93   2            break;
+  94   2          case 13:
+  95   2            if(Seg_Mode == 2){
+  96   3              if(p_mode==0) if(--_R==9) _R=20;
+  97   3              if(p_mode==1) if((_B-5)<-90) _B=90;
+  98   3            } 
+  99   2            break;
+ 100   2      
+ 101   2        }
+ 102   1      }
+ 103          
+ 104          /* 信息处理函数 */
+ 105          void Seg_Proc()
+ 106          {
+ 107   1        if(Seg_Slow_Down<500) return;
+ 108   1        Seg_Slow_Down = 0;//数码管减速程序
+ 109   1        
+ 110   1        if(Juli<30) Wait_Flag=1;
+ 111   1        else Wait_Flag = 0;
+ 112   1      
+ 113   1        if(X==X_Set && Y==Y_Set) Arv_Flag=1;
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 3   
+
+ 114   1        else Arv_Flag=0;
+ 115   1      
+ 116   1        if(Arv_Flag==1){
+ 117   2          if(++L3_Count==6) Arv_Flag=0;
+ 118   2        }
+ 119   1      
+ 120   1        switch(Seg_Mode){
+ 121   2          case 0:
+ 122   2            switch(Run_Status){
+ 123   3              case 0:
+ 124   3                Seg_Buf[0] = 18;
+ 125   3                if(X/100%10 != 0) Seg_Buf[1] = X/100%10;
+ 126   3                else Seg_Buf[1] = 16;
+ 127   3                if(X/10%10 != 0) Seg_Buf[2] = X/10%10;
+ 128   3                else Seg_Buf[2] = 16;
+ 129   3                Seg_Buf[3] = X%10;
+ 130   3                Seg_Buf[4] = 17;
+ 131   3                if(Y/100%10 != 0) Seg_Buf[5] = Y/100%10;
+ 132   3                else Seg_Buf[5] = 16;
+ 133   3                if(Y/10%10 != 0) Seg_Buf[6] = Y/10%10;
+ 134   3                else Seg_Buf[6] = 16;
+ 135   3                Seg_Buf[7] = Y%10;
+ 136   3                break;
+ 137   3              case 1:
+ 138   3              case 2:
+ 139   3                Seg_Buf[0] = 18;
+ 140   3                if(X_Set/100%10 != 0) Seg_Buf[1] = X_Set/100%10;
+ 141   3                else Seg_Buf[1] = 16;
+ 142   3                if(X_Set/10%10 != 0) Seg_Buf[2] = X_Set/10%10;
+ 143   3                else Seg_Buf[2] = 16;
+ 144   3                Seg_Buf[3] = X_Set%10;
+ 145   3                Seg_Buf[4] = 17;
+ 146   3                if(Y_Set/100%10 != 0) Seg_Buf[5] = Y_Set/100%10;
+ 147   3                else Seg_Buf[5] = 16;
+ 148   3                if(Y_Set/10%10 != 0) Seg_Buf[6] = Y_Set/10%10;
+ 149   3                else Seg_Buf[6] = 16;
+ 150   3                Seg_Buf[7] = Y_Set%10;
+ 151   3                break;
+ 152   3            }
+ 153   2            break;
+ 154   2          case 1:
+ 155   2            switch(Run_Status){
+ 156   3              case 0:
+ 157   3                Seg_Buf[0] = 14;
+ 158   3                Seg_Buf[1] = 2;
+ 159   3                Seg_Buf[2] = 16;
+ 160   3                Seg_Buf[3] = 17;
+ 161   3                Seg_Buf[4] = 17;
+ 162   3                Seg_Buf[5] = 17;
+ 163   3                Seg_Buf[6] = 17;
+ 164   3                Seg_Buf[7] = 17;
+ 165   3                break;
+ 166   3              case 1:
+ 167   3                Seg_Buf[0] = 14;
+ 168   3                Seg_Buf[1] = 1;
+ 169   3                Seg_Buf[2] = 16;
+ 170   3                if(Speed_Disp/10000%10 != 0) Seg_Buf[3] = Speed_Disp/10000%10;
+ 171   3                else Seg_Buf[3] = 16;
+ 172   3                if(Speed_Disp/1000%10 != 0) Seg_Buf[4] = Speed_Disp/1000%10;
+ 173   3                else Seg_Buf[4] = 16;
+ 174   3                if(Speed_Disp/100%10 != 0) Seg_Buf[5] = Speed_Disp/100%10;
+ 175   3                else Seg_Buf[5] = 16;
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 4   
+
+ 176   3                if(Speed_Disp/10%10 != 0) Seg_Buf[6] = Speed_Disp/10%10 + ',';
+ 177   3                else Seg_Buf[6] = 16;
+ 178   3                Seg_Buf[7] = Speed_Disp%10;
+ 179   3                break;
+ 180   3              case 2:
+ 181   3                Seg_Buf[0] = 14;
+ 182   3                Seg_Buf[1] = 3;
+ 183   3                Seg_Buf[2] = 16;
+ 184   3                if(Juli/10000%10 != 0) Seg_Buf[3] = Juli/10000%10;
+ 185   3                else Seg_Buf[3] = 16;
+ 186   3                if(Juli/1000%10 != 0) Seg_Buf[4] = Juli/1000%10;
+ 187   3                else Seg_Buf[4] = 16;
+ 188   3                if(Juli/100%10 != 0) Seg_Buf[5] = Juli/100%10;
+ 189   3                else Seg_Buf[5] = 16;
+ 190   3                if(Juli/10%10 != 0) Seg_Buf[6] = Juli/10%10;
+ 191   3                else Seg_Buf[6] = 16;
+ 192   3                Seg_Buf[7] = Juli%10;
+ 193   3                break;
+ 194   3            }
+ 195   2          case 2:
+ 196   2            Seg_Buf[0] = 19;
+ 197   2            Seg_Buf[1] = 16;
+ 198   2            Seg_Buf[2] = _R/10%10 + ',';
+ 199   2            Seg_Buf[3] = _R%10;
+ 200   2            Seg_Buf[4] = 16;
+ 201   2            if(_B<0 && _B/10!=0) Seg_Buf[5] = 17;
+ 202   2            else Seg_Buf[5] = 16;
+ 203   2            if(_B<0 && _B/10==0) Seg_Buf[6] = 17;
+ 204   2            else if(_B/10==0) Seg_Buf[6] = 16;
+ 205   2            else Seg_Buf[6] = _B/10%10;
+ 206   2            Seg_Buf[7] = _B%10;
+ 207   2            break;
+ 208   2        }
+ 209   1      
+ 210   1      }
+ 211          
+ 212          /* 其他显示函数 */
+ 213          void Led_Proc()
+ 214          {
+ 215   1        if(Run_Status==2) ucLed[0]=Flash_Flag;
+ 216   1        else ucLed[0]=Run_Status;
+ 217   1      
+ 218   1        if(Run_Status==1){
+ 219   2          if(Night_Flag) ucLed[1]=0;
+ 220   2          else ucLed[1]=1;
+ 221   2        }
+ 222   1        else ucLed[1]=0;
+ 223   1      
+ 224   1        ucLed[2]=Arv_Flag;
+ 225   1      
+ 226   1      }
+ 227          
+ 228          /* 串口处理函数 */
+ 229          void Uart_Proc()
+ 230          {
+ 231   1        if(Uart_Slow_Down<10)return;
+ 232   1        Uart_Slow_Down=0;
+ 233   1        
+ 234   1        if (Uart_Rx_Index == 0)
+ 235   1          return; // 无数据，直接返回
+ 236   1        if (Uart_Recv_Tick >= 10)
+ 237   1        { // 若接收超时，对数据读取，清空缓存区
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 5   
+
+ 238   2          Uart_Recv_Tick = 0;
+ 239   2          Uart_Rx_Flag = 0;
+ 240   2          memset(Uart_Buf, 0, Uart_Rx_Index); // 清空接收数据
+ 241   2          Uart_Rx_Index = 0;
+ 242   2        }
+ 243   1      }
+ 244          
+ 245          /* 定时器0中断初始化函数 */
+ 246          void Timer0Init(void)   //1毫秒@12.000MHz
+ 247          {
+ 248   1        AUXR &= 0x7F;   //定时器时钟12T模式
+ 249   1        TMOD &= 0xF0;   //设置定时器模式
+ 250   1        TL0 = 0x18;   //设置定时初始值
+ 251   1        TH0 = 0xFC;   //设置定时初始值
+ 252   1        TF0 = 0;    //清除TF0标志
+ 253   1        TR0 = 1;    //定时器0开始计时
+ 254   1        ET0 = 1;    //定时器中断0打开
+ 255   1        EA = 1;     //总中断打开
+ 256   1      }
+ 257          
+ 258          /* 定时器0中断服务函数 */
+ 259          void Timer0Server() interrupt 1
+ 260          {  
+ 261   1        Key_Slow_Down ++;
+ 262   1        Seg_Slow_Down ++;
+ 263   1        Uart_Slow_Down++;
+ 264   1        if(Seg_Slow_Down % 100 == 0) Flash_Flag=!Flash_Flag;
+ 265   1        if(++Seg_Pos == 8) Seg_Pos = 0;//数码管显示专用
+ 266   1         // 数码管显示处理
+ 267   1        if (Seg_Buf[Seg_Pos] > 20)
+ 268   1          Seg_Disp(Seg_Pos, Seg_Buf[Seg_Pos] - ',', 1); // 带小数点
+ 269   1        else
+ 270   1          Seg_Disp(Seg_Pos, Seg_Buf[Seg_Pos], 0); // 无小数点
+ 271   1         Led_Disp(ucLed); 
+ 272   1      }
+ 273          
+ 274          /* 串口1中断服务函数 */
+ 275          void Uart1Server() interrupt 4
+ 276          {
+ 277   1        if(RI == 1) //串口接收数据
+ 278   1        {
+ 279   2          Uart_Recv[Uart_Recv_Index] = SBUF;
+ 280   2          Uart_Recv_Index++;
+ 281   2          RI = 0;
+ 282   2        }
+ 283   1      }
+ 284          
+ 285          /* Main */
+ 286          void main()
+ 287          {
+ 288   1        System_Init();
+ 289   1        Timer0Init();
+ 290   1        UartInit();
+ 291   1        while (1)
+ 292   1        {
+ 293   2          Key_Proc();
+ 294   2          Seg_Proc();
+ 295   2          Led_Proc();
+ 296   2          Uart_Proc();
+ 297   2        }
+ 298   1      }
+
+C51 COMPILER V9.54   MAIN                                                                  04/08/2025 20:37:04 PAGE 6   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1411    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =     10    ----
+   DATA SIZE        =     32    ----
+   IDATA SIZE       =     36    ----
+   BIT SIZE         =      5    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

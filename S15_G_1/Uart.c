@@ -1,6 +1,6 @@
-#include "uart.h"
+#include "Uart.h"
 
-void Uart_Init(void) // 9600bps@12.000MHz
+void UartInit(void) // 9600bps@12.000MHz
 {
   SCON = 0x50;  
   AUXR |= 0x01; 

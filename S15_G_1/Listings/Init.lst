@@ -1,0 +1,48 @@
+C51 COMPILER V9.54   INIT                                                                  04/08/2025 20:37:03 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE INIT
+OBJECT MODULE PLACED IN .\Objects\Init.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Init.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\Init
+                    -.lst) TABS(2) OBJECT(.\Objects\Init.obj)
+
+line level    source
+
+   1          #include <Init.h>
+   2          
+   3          void System_Init()
+   4          {
+   5   1        unsigned char temp;
+   6   1        
+   7   1        P0 = 0xff;
+   8   1        
+   9   1        // 第一次操作P2锁存器
+  10   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  11   1        temp = temp | 0x80;  // 与0x80进行或操作
+  12   1        P2 = temp;           // 写入P2
+  13   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  14   1        P2 = temp;           // 写入P2，关闭锁存器
+  15   1        
+  16   1        P0 = 0x00;
+  17   1        
+  18   1        // 第二次操作P2锁存器
+  19   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  20   1        temp = temp | 0xa0;  // 与0xa0进行或操作
+  21   1        P2 = temp;           // 写入P2
+  22   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  23   1        P2 = temp;           // 写入P2，关闭锁存器
+  24   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     39    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

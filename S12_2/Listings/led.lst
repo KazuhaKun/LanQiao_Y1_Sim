@@ -1,0 +1,148 @@
+C51 COMPILER V9.54   LED                                                                   04/12/2025 00:29:01 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE LED
+OBJECT MODULE PLACED IN .\Objects\led.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE led.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\led.l
+                    -st) TABS(2) OBJECT(.\Objects\led.obj)
+
+line level    source
+
+   1          #include "led.h"
+   2          /// @brief Led扫描
+   3          /// @param addr 需要控制的Led的地址（0-7）
+   4          /// @param enable 控制该地址的Led是否点亮
+   5          #include <STC15F2K60S2.H>
+   6          
+   7           idata  unsigned char temp_1 = 0x00;
+   8           idata  unsigned char temp_old_1 = 0xff;
+   9          
+  10          void Led_Disp(unsigned char *ucLed)
+  11          {
+  12   1         unsigned char temp;
+  13   1         temp_1=0x00;
+  14   1         temp_1 = (ucLed[0] << 0) | (ucLed[1] << 1) | (ucLed[2] << 2) | (ucLed[3] << 3) |
+  15   1               (ucLed[4] << 4) | (ucLed[5] << 5) | (ucLed[6] << 6) | (ucLed[7] << 7);
+  16   1        if (temp_1 != temp_old_1)
+  17   1        {
+  18   2          P0 = ~temp_1;
+  19   2          
+  20   2          // 操作P2锁存器
+  21   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  22   2          temp = temp | 0x80;  // 与0x80进行或操作
+  23   2          P2 = temp;           // 写入P2
+  24   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  25   2          P2 = temp;           // 写入P2，关闭锁存器
+  26   2          
+  27   2          temp_old_1 = temp_1;
+  28   2        }
+  29   1      }
+  30          
+  31          void Led_Off()
+  32          {
+  33   1          unsigned char temp;
+  34   1        
+  35   1          P0 = 0xff;
+  36   1          
+  37   1          // 操作P2锁存器
+  38   1          temp = P2 & 0x1f;    // 保留P2的低5位
+  39   1          temp = temp | 0x80;  // 与0x80进行或操作
+  40   1          P2 = temp;           // 写入P2
+  41   1          temp = P2 & 0x1f;    // 保留P2的低5位
+  42   1          P2 = temp;           // 写入P2，关闭锁存器
+  43   1          
+  44   1          temp_old_1=0x00;
+  45   1      }
+  46          
+  47          idata unsigned char temp_0 = 0x00;
+  48          idata unsigned char temp_old_0 = 0xff;
+  49          /// @brief 蜂鸣器控制
+  50          /// @param enable
+  51          void Beep(bit enable)
+  52          {
+  53   1        unsigned char temp;
+  54   1        
+C51 COMPILER V9.54   LED                                                                   04/12/2025 00:29:01 PAGE 2   
+
+  55   1        if (enable)
+  56   1          temp_0 |= 0x40;
+  57   1        else
+  58   1          temp_0 &= ~(0x40);
+  59   1        if (temp_0 != temp_old_0)
+  60   1        {
+  61   2          P0 = temp_0;
+  62   2          
+  63   2          // 操作P2锁存器
+  64   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  65   2          temp = temp | 0xa0;  // 与0xa0进行或操作
+  66   2          P2 = temp;           // 写入P2
+  67   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  68   2          P2 = temp;           // 写入P2，关闭锁存器
+  69   2          
+  70   2          temp_old_0 = temp_0;
+  71   2        }
+  72   1      }
+  73          /// @brief 继电器控制
+  74          /// @param enable
+  75          void Relay(bit enable)
+  76          {
+  77   1        unsigned char temp;
+  78   1        
+  79   1        if (enable)
+  80   1          temp_0 |= 0x10;
+  81   1        else
+  82   1          temp_0 &= ~(0x10);
+  83   1        if (temp_0 != temp_old_0)
+  84   1        {
+  85   2          P0 = temp_0;
+  86   2          
+  87   2          // 操作P2锁存器
+  88   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  89   2          temp = temp | 0xa0;  // 与0xa0进行或操作
+  90   2          P2 = temp;           // 写入P2
+  91   2          temp = P2 & 0x1f;    // 保留P2的低5位
+  92   2          P2 = temp;           // 写入P2，关闭锁存器
+  93   2          
+  94   2          temp_old_0 = temp_0;
+  95   2        }
+  96   1      }
+  97          /// @brief MOTOR控制
+  98          /// @param enable
+  99          void MOTOR(bit enable)
+ 100          {
+ 101   1        unsigned char temp;
+ 102   1        
+ 103   1        if (enable)
+ 104   1          temp_0 |= 0x20;
+ 105   1        else
+ 106   1          temp_0 &= ~(0x20);
+ 107   1        if (temp_0 != temp_old_0)
+ 108   1        {
+ 109   2          P0 = temp_0;
+ 110   2          
+ 111   2          // 操作P2锁存器
+ 112   2          temp = P2 & 0x1f;    // 保留P2的低5位
+ 113   2          temp = temp | 0xa0;  // 与0xa0进行或操作
+ 114   2          P2 = temp;           // 写入P2
+ 115   2          temp = P2 & 0x1f;    // 保留P2的低5位
+ 116   2          P2 = temp;           // 写入P2，关闭锁存器
+C51 COMPILER V9.54   LED                                                                   04/12/2025 00:29:01 PAGE 3   
+
+ 117   2          
+ 118   2          temp_old_0 = temp_0;
+ 119   2        }
+ 120   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    286    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      4    ----
+   BIT SIZE         =   ----       3
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

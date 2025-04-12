@@ -45,6 +45,8 @@ bit Flash_Flag;
 float T;
 unsigned int temp_disp;
 unsigned int temp_set_disp;
+unsigned char Key12_Last;
+unsigned char Key12_Slow_Down;
 
 void Key_Proc(){
 	if(Key_Flag)return;
@@ -57,8 +59,21 @@ void Key_Proc(){
 
 	switch(Key_Down){
 		case 12:
-			if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+			if(Key12_Last && Key12_Slow_Down < 30){
+				//Do something
+				if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+
+				Key12_Last=0;
+				Key12_Slow_Down=0;
+			}
+			else {
+				Key12_Last = 1;
+				Key12_Slow_Down = 0;
+			}
 			break;
+		// case 12:
+		// 	if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+		// 	break;
 		case 13:
 			Relay_Mode = !Relay_Mode;
 			break;
@@ -175,6 +190,10 @@ void Timer1_Isr(void) interrupt 3
 	}
 	if (Slow_Down % 10 == 0){
 		Key_Flag = 0;
+		if(Key12_Last && ++Key12_Slow_Down >=30){
+			Key12_Last=0;
+			Key12_Slow_Down=0;
+		}
 	}
 	if (Slow_Down % 10 == 0){
 		Read_Rtc(ucRtc);

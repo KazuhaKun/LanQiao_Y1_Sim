@@ -30,6 +30,10 @@ idata unsigned char Uart_Rx_Flag;
 idata unsigned int Time_1s;
 idata unsigned int Freq;
 
+/* 额外按键处理 */
+idata unsigned char KeyN_Last;
+idata unsigned char KeyN_Slow_Down;
+
 /* 键盘处理函数 */
 void Key_Proc()
 {
@@ -41,6 +45,20 @@ void Key_Proc()
     Key_Up = ~Key_Val & (Key_Old ^ Key_Val);//捕捉按键上降沿
     Key_Old = Key_Val;//辅助扫描变量
 
+    switch(Key_Down){
+        case N:
+            if(KeyN_Last && KeyN_Slow_Down<30){
+                //执行函数
+
+                //重置
+                KeyN_Last=0;
+                KeyN_Slow_Down=0;
+            }
+            else {  //单击时操作
+                KeyN_Last=1;
+                KeyN_Slow_Down=0;
+            }
+    }
 }
 
 /* 信息处理函数 */
@@ -103,6 +121,11 @@ void Timer1Server() interrupt 3
     Key_Slow_Down ++;
     Seg_Slow_Down ++;
 
+    //双击超时
+    if(KeyN_Last&&++KeyN_Slow_Down>=30){
+        KeyN_Last=0;
+        KeyN_Slow_Down=0;
+    }
     if(++Seg_Pos == 8) Seg_Pos = 0;//数码管显示专用
      // 数码管显示处理
     if (Seg_Buf[Seg_Pos] > 20)

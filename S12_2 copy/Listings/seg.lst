@@ -1,0 +1,62 @@
+C51 COMPILER V9.54   SEG                                                                   04/12/2025 20:57:05 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE SEG
+OBJECT MODULE PLACED IN .\Objects\seg.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE seg.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\seg.l
+                    -st) TABS(2) OBJECT(.\Objects\seg.obj)
+
+line level    source
+
+   1          #include <Seg.h>
+   2          
+   3          unsigned char seg_dula[] = {0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90,0x88,0x83,0xc6,0xa1,0x86,0x8
+             -e,0x40,0xff,0x8c};  //数码管段码
+   4          unsigned char seg_wela[] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+   5          
+   6          void Seg_Disp(unsigned char wela,dula,point)
+   7          {
+   8   1        unsigned char temp;
+   9   1        
+  10   1        P0 = 0xff;
+  11   1        
+  12   1        // 第一次操作P2锁存器 - 打开位选锁存器
+  13   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  14   1        temp = temp | 0xe0;  // 与0xe0进行或操作
+  15   1        P2 = temp;           // 写入P2
+  16   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  17   1        P2 = temp;           // 写入P2，关闭锁存器
+  18   1      
+  19   1        P0 = seg_wela[wela];
+  20   1        
+  21   1        // 第二次操作P2锁存器 - 打开段选锁存器
+  22   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  23   1        temp = temp | 0xc0;  // 与0xc0进行或操作
+  24   1        P2 = temp;           // 写入P2
+  25   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  26   1        P2 = temp;           // 写入P2，关闭锁存器
+  27   1        
+  28   1        P0 = seg_dula[dula];
+  29   1        if(point) P0 &= 0x7f;
+  30   1        
+  31   1        // 第三次操作P2锁存器 - 再次打开位选锁存器
+  32   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  33   1        temp = temp | 0xe0;  // 与0xe0进行或操作
+  34   1        P2 = temp;           // 写入P2
+  35   1        temp = P2 & 0x1f;    // 保留P2的低5位
+  36   1        P2 = temp;           // 写入P2，关闭锁存器
+  37   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     73    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     27    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

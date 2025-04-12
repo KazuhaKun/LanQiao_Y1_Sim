@@ -1,4 +1,4 @@
-C51 COMPILER V9.54   MAIN                                                                  03/21/2025 21:35:01 PAGE 1   
+C51 COMPILER V9.54   MAIN                                                                  04/12/2025 18:47:29 PAGE 1   
 
 
 C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
@@ -55,180 +55,199 @@ line level    source
   45          float T;
   46          unsigned int temp_disp;
   47          unsigned int temp_set_disp;
-  48          
-  49          void Key_Proc(){
-  50   1        if(Key_Flag)return;
-  51   1        Key_Flag = 1;
-  52   1        Key_Val = Key_Read();
-  53   1        Key_Down = Key_Val & (Key_Old ^ Key_Val);
-  54   1        Key_Up = ~Key_Val & (Key_Old ^ Key_Val);
-C51 COMPILER V9.54   MAIN                                                                  03/21/2025 21:35:01 PAGE 2   
+  48          unsigned char Key12_Last;
+  49          unsigned char Key12_Slow_Down;
+  50          
+  51          void Key_Proc(){
+  52   1        if(Key_Flag)return;
+  53   1        Key_Flag = 1;
+  54   1        Key_Val = Key_Read();
+C51 COMPILER V9.54   MAIN                                                                  04/12/2025 18:47:29 PAGE 2   
 
-  55   1        Key_Old = Key_Val;
-  56   1      
-  57   1      
-  58   1        switch(Key_Down){
-  59   2          case 12:
-  60   2            if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
-  61   2            break;
-  62   2          case 13:
-  63   2            Relay_Mode = !Relay_Mode;
-  64   2            break;
-  65   2          case 16:
-  66   2            if(Seg_Disp_Mode==2) if(++temp_set==99) temp_set=0;
-  67   2            break;
-  68   2          case 17:
-  69   2            if(Seg_Disp_Mode==2) if(--temp_set==0) temp_set=99;
-  70   2            if(Seg_Disp_Mode==1) time_disp_flag = 1;
-  71   2            break;
-  72   2        }
-  73   1        switch(Key_Up){
-  74   2          case 17:
-  75   2            if(Seg_Disp_Mode==1) time_disp_flag = 0;
-  76   2            break;
-  77   2        }
-  78   1        // if(Seg_Disp_Mode==1){
-  79   1        //  if(Key_Old==17) time_disp_flag = 1;
-  80   1        //  else time_disp_flag = 0;
-  81   1        // }
-  82   1      }
-  83          
-  84          void Led_Proc(){
-  85   1        if(ucRtc[1]==0 && ucRtc[2]<=5) ucLed[0]=1;
-  86   1        else ucLed[0]=0;
-  87   1        if(Relay_Mode==0) ucLed[1]=1;
-  88   1        else ucLed[1]=0;
-  89   1        if(Relay_Flag==1) ucLed[2]=Flash_Flag;
-  90   1        else ucLed[2]=0;
-  91   1      }
-  92          
-  93          void Relay_Proc(){
-  94   1        if(Relay_Mode==0){
-  95   2          if(T>temp_set) Relay_Flag=1;
-  96   2          else Relay_Flag=0;
-  97   2        }
-  98   1        if(Relay_Mode==1){
-  99   2          if(ucRtc[1]==0 && ucRtc[2]<=5) Relay_Flag=1;
- 100   2          else Relay_Flag=0;
- 101   2        }
- 102   1      }
- 103          void Seg_Proc(){
- 104   1        if(Seg_Flag) return;
- 105   1        Seg_Flag = 1;
- 106   1      
- 107   1        T=rd_temperature();
- 108   1        temp_disp=T*10;
- 109   1        // temp_set_disp=temp_set;
- 110   1        
- 111   1        if(Seg_Disp_Mode==0){
- 112   2          Seg_Buf[0]=18;
- 113   2          Seg_Buf[1]=1;
- 114   2          Seg_Buf[5]=temp_disp/100%10;
- 115   2          Seg_Buf[6]=temp_disp/10%10;
- 116   2          Seg_Point[6]=1;
-C51 COMPILER V9.54   MAIN                                                                  03/21/2025 21:35:01 PAGE 3   
+  55   1        Key_Down = Key_Val & (Key_Old ^ Key_Val);
+  56   1        Key_Up = ~Key_Val & (Key_Old ^ Key_Val);
+  57   1        Key_Old = Key_Val;
+  58   1      
+  59   1      
+  60   1        switch(Key_Down){
+  61   2          case 12:
+  62   2            if(Key12_Last && Key12_Slow_Down < 30){
+  63   3              //Do something
+  64   3              if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+  65   3      
+  66   3              Key12_Last=0;
+  67   3              Key12_Slow_Down=0;
+  68   3            }
+  69   2            else {
+  70   3              Key12_Last = 1;
+  71   3              Key12_Slow_Down = 0;
+  72   3            }
+  73   2            break;
+  74   2          // case 12:
+  75   2          //  if(++Seg_Disp_Mode==3) Seg_Disp_Mode=0;
+  76   2          //  break;
+  77   2          case 13:
+  78   2            Relay_Mode = !Relay_Mode;
+  79   2            break;
+  80   2          case 16:
+  81   2            if(Seg_Disp_Mode==2) if(++temp_set==99) temp_set=0;
+  82   2            break;
+  83   2          case 17:
+  84   2            if(Seg_Disp_Mode==2) if(--temp_set==0) temp_set=99;
+  85   2            if(Seg_Disp_Mode==1) time_disp_flag = 1;
+  86   2            break;
+  87   2        }
+  88   1        switch(Key_Up){
+  89   2          case 17:
+  90   2            if(Seg_Disp_Mode==1) time_disp_flag = 0;
+  91   2            break;
+  92   2        }
+  93   1        // if(Seg_Disp_Mode==1){
+  94   1        //  if(Key_Old==17) time_disp_flag = 1;
+  95   1        //  else time_disp_flag = 0;
+  96   1        // }
+  97   1      }
+  98          
+  99          void Led_Proc(){
+ 100   1        if(ucRtc[1]==0 && ucRtc[2]<=5) ucLed[0]=1;
+ 101   1        else ucLed[0]=0;
+ 102   1        if(Relay_Mode==0) ucLed[1]=1;
+ 103   1        else ucLed[1]=0;
+ 104   1        if(Relay_Flag==1) ucLed[2]=Flash_Flag;
+ 105   1        else ucLed[2]=0;
+ 106   1      }
+ 107          
+ 108          void Relay_Proc(){
+ 109   1        if(Relay_Mode==0){
+ 110   2          if(T>temp_set) Relay_Flag=1;
+ 111   2          else Relay_Flag=0;
+ 112   2        }
+ 113   1        if(Relay_Mode==1){
+ 114   2          if(ucRtc[1]==0 && ucRtc[2]<=5) Relay_Flag=1;
+ 115   2          else Relay_Flag=0;
+ 116   2        }
+C51 COMPILER V9.54   MAIN                                                                  04/12/2025 18:47:29 PAGE 3   
 
- 117   2          Seg_Buf[7]=temp_disp%10;
- 118   2        }
- 119   1        if(Seg_Disp_Mode==1){
- 120   2          Seg_Buf[0]=18;
- 121   2          Seg_Buf[1]=2;
- 122   2          if(time_disp_flag==0){
- 123   3            Seg_Buf[3]=ucRtc[0]/10%10;
- 124   3            Seg_Buf[4]=ucRtc[0]%10;
- 125   3            Seg_Buf[5]=16;
- 126   3            Seg_Buf[6]=ucRtc[1]/10%10;
- 127   3            Seg_Point[6]=0;
- 128   3            Seg_Buf[7]=ucRtc[1]%10;
- 129   3          }
- 130   2          if(time_disp_flag==1){
- 131   3            Seg_Buf[3]=ucRtc[1]/10%10;
- 132   3            Seg_Buf[4]=ucRtc[1]%10;
- 133   3            Seg_Buf[5]=16;
- 134   3            Seg_Buf[6]=ucRtc[2]/10%10;
- 135   3            Seg_Point[6]=0;
- 136   3            Seg_Buf[7]=ucRtc[2]%10;
- 137   3          }
- 138   2        }
- 139   1        if(Seg_Disp_Mode==2){
- 140   2          Seg_Buf[0]=18;
- 141   2          Seg_Buf[1]=3;
- 142   2          Seg_Buf[3]=17;
- 143   2          Seg_Buf[4]=17;
- 144   2          Seg_Buf[5]=17;
- 145   2          Seg_Buf[6]=temp_set/10%10;
- 146   2          Seg_Buf[7]=temp_set%10;
- 147   2        }
- 148   1        
- 149   1      }
- 150          
- 151          // void Timer0_Init(void){
- 152          //  AUXR &= 0x7f;
- 153          //  TMOD &= 0xf0;
- 154          //  TMOD |= 0x05;
- 155          //  TL0 = 0;
- 156          //  TH0 = 0;
- 157          //  TF0 = 0;
- 158          //  TR0 = 1;
- 159          // }
- 160          void Timer1_Init(void){
- 161   1        AUXR &= 0xbf;
- 162   1        TMOD &= 0x0f;
- 163   1        TL1 = (65536-1000)%256;
- 164   1        TH1 = (65536-1000)/256;
- 165   1        TF1 = 0;
- 166   1        TR1 = 1;
- 167   1        ET1 = 1;
- 168   1        EA = 1;
- 169   1      }
- 170          
- 171          void Timer1_Isr(void) interrupt 3
- 172          {
- 173   1        if (++Slow_Down == 400){
- 174   2          Seg_Flag = Slow_Down =0;
- 175   2        }
- 176   1        if (Slow_Down % 10 == 0){
- 177   2          Key_Flag = 0;
- 178   2        }
-C51 COMPILER V9.54   MAIN                                                                  03/21/2025 21:35:01 PAGE 4   
+ 117   1      }
+ 118          void Seg_Proc(){
+ 119   1        if(Seg_Flag) return;
+ 120   1        Seg_Flag = 1;
+ 121   1      
+ 122   1        T=rd_temperature();
+ 123   1        temp_disp=T*10;
+ 124   1        // temp_set_disp=temp_set;
+ 125   1        
+ 126   1        if(Seg_Disp_Mode==0){
+ 127   2          Seg_Buf[0]=18;
+ 128   2          Seg_Buf[1]=1;
+ 129   2          Seg_Buf[5]=temp_disp/100%10;
+ 130   2          Seg_Buf[6]=temp_disp/10%10;
+ 131   2          Seg_Point[6]=1;
+ 132   2          Seg_Buf[7]=temp_disp%10;
+ 133   2        }
+ 134   1        if(Seg_Disp_Mode==1){
+ 135   2          Seg_Buf[0]=18;
+ 136   2          Seg_Buf[1]=2;
+ 137   2          if(time_disp_flag==0){
+ 138   3            Seg_Buf[3]=ucRtc[0]/10%10;
+ 139   3            Seg_Buf[4]=ucRtc[0]%10;
+ 140   3            Seg_Buf[5]=16;
+ 141   3            Seg_Buf[6]=ucRtc[1]/10%10;
+ 142   3            Seg_Point[6]=0;
+ 143   3            Seg_Buf[7]=ucRtc[1]%10;
+ 144   3          }
+ 145   2          if(time_disp_flag==1){
+ 146   3            Seg_Buf[3]=ucRtc[1]/10%10;
+ 147   3            Seg_Buf[4]=ucRtc[1]%10;
+ 148   3            Seg_Buf[5]=16;
+ 149   3            Seg_Buf[6]=ucRtc[2]/10%10;
+ 150   3            Seg_Point[6]=0;
+ 151   3            Seg_Buf[7]=ucRtc[2]%10;
+ 152   3          }
+ 153   2        }
+ 154   1        if(Seg_Disp_Mode==2){
+ 155   2          Seg_Buf[0]=18;
+ 156   2          Seg_Buf[1]=3;
+ 157   2          Seg_Buf[3]=17;
+ 158   2          Seg_Buf[4]=17;
+ 159   2          Seg_Buf[5]=17;
+ 160   2          Seg_Buf[6]=temp_set/10%10;
+ 161   2          Seg_Buf[7]=temp_set%10;
+ 162   2        }
+ 163   1        
+ 164   1      }
+ 165          
+ 166          // void Timer0_Init(void){
+ 167          //  AUXR &= 0x7f;
+ 168          //  TMOD &= 0xf0;
+ 169          //  TMOD |= 0x05;
+ 170          //  TL0 = 0;
+ 171          //  TH0 = 0;
+ 172          //  TF0 = 0;
+ 173          //  TR0 = 1;
+ 174          // }
+ 175          void Timer1_Init(void){
+ 176   1        AUXR &= 0xbf;
+ 177   1        TMOD &= 0x0f;
+ 178   1        TL1 = (65536-1000)%256;
+C51 COMPILER V9.54   MAIN                                                                  04/12/2025 18:47:29 PAGE 4   
 
- 179   1        if (Slow_Down % 10 == 0){
- 180   2          Read_Rtc(ucRtc);
- 181   2        }
- 182   1        if (Uart_Flag) Sys_Tick++;
- 183   1        if (++Time_1s == 1000){
- 184   2          Time_1s = 0;
- 185   2          Freq = TH0 << 8 | TL0;
- 186   2          TH0 = 0;
- 187   2          TL0 = 0;
- 188   2        }
- 189   1        if (Slow_Down % 100 == 0){
- 190   2          Flash_Flag = !Flash_Flag;
- 191   2        }
- 192   1        Seg_Disp(Slow_Down % 8, Seg_Buf[Slow_Down % 8], Seg_Point[Slow_Down % 8]);
- 193   1        Led_Disp(Slow_Down % 8, ucLed[Slow_Down % 8]);
- 194   1        Relay(Relay_Flag);
- 195   1      }
- 196          
- 197          void main(){
- 198   1        InitSys();
- 199   1        Timer1_Init();
- 200   1        Set_Rtc(ucRtc);
- 201   1        while(1){
- 202   2          Key_Proc();
- 203   2          Seg_Proc();
- 204   2          Led_Proc();
- 205   2          Relay_Proc();
- 206   2        }
- 207   1      }
+ 179   1        TH1 = (65536-1000)/256;
+ 180   1        TF1 = 0;
+ 181   1        TR1 = 1;
+ 182   1        ET1 = 1;
+ 183   1        EA = 1;
+ 184   1      }
+ 185          
+ 186          void Timer1_Isr(void) interrupt 3
+ 187          {
+ 188   1        if (++Slow_Down == 400){
+ 189   2          Seg_Flag = Slow_Down =0;
+ 190   2        }
+ 191   1        if (Slow_Down % 10 == 0){
+ 192   2          Key_Flag = 0;
+ 193   2          if(Key12_Last && ++Key12_Slow_Down >=30){
+ 194   3            Key12_Last=0;
+ 195   3            Key12_Slow_Down=0;
+ 196   3          }
+ 197   2        }
+ 198   1        if (Slow_Down % 10 == 0){
+ 199   2          Read_Rtc(ucRtc);
+ 200   2        }
+ 201   1        if (Uart_Flag) Sys_Tick++;
+ 202   1        if (++Time_1s == 1000){
+ 203   2          Time_1s = 0;
+ 204   2          Freq = TH0 << 8 | TL0;
+ 205   2          TH0 = 0;
+ 206   2          TL0 = 0;
+ 207   2        }
+ 208   1        if (Slow_Down % 100 == 0){
+ 209   2          Flash_Flag = !Flash_Flag;
+ 210   2        }
+ 211   1        Seg_Disp(Slow_Down % 8, Seg_Buf[Slow_Down % 8], Seg_Point[Slow_Down % 8]);
+ 212   1        Led_Disp(Slow_Down % 8, ucLed[Slow_Down % 8]);
+ 213   1        Relay(Relay_Flag);
+ 214   1      }
+ 215          
+ 216          void main(){
+ 217   1        InitSys();
+ 218   1        Timer1_Init();
+ 219   1        Set_Rtc(ucRtc);
+ 220   1        while(1){
+ 221   2          Key_Proc();
+ 222   2          Seg_Proc();
+ 223   2          Led_Proc();
+ 224   2          Relay_Proc();
+ 225   2        }
+ 226   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    808    ----
+   CODE SIZE        =    851    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     62    ----
+   DATA SIZE        =     64    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      7    ----
 END OF MODULE INFORMATION.

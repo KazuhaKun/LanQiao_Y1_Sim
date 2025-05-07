@@ -40,6 +40,7 @@ unsigned char Seg_Disp_Mode=0;
 bit Relay_Mode=0;
 bit Relay_Flag=0;
 unsigned int temp_set=23;
+unsigned char temp_save[2];
 bit time_disp_flag=0;
 bit Flash_Flag;
 float T;
@@ -84,6 +85,12 @@ void Key_Proc(){
 			if(Seg_Disp_Mode==2) if(--temp_set==0) temp_set=99;
 			if(Seg_Disp_Mode==1) time_disp_flag = 1;
 			break;
+		case 8:
+			if(Seg_Disp_Mode==2) {
+				temp_save[1]=temp_set/10;
+				temp_save[2]=temp_set%10;
+				EEPROM_Write(temp_save,0x00,2);
+			}
 	}
 	switch(Key_Up){
 		case 17:
